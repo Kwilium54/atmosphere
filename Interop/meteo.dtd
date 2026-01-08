@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ================================================================
+     DTD pour les prévisions météorologiques
+     Basée sur le format d'API météo réel
+     ================================================================ -->
+
+<!ELEMENT previsions (request_state, source, message, request_time, request_key, model_run, echeance+)>
+
+<!-- Métadonnées de la réponse API -->
+<!ELEMENT request_state (#PCDATA)>
+<!ELEMENT source (#PCDATA)>
+<!ELEMENT message (#PCDATA)>
+<!ELEMENT request_time (#PCDATA)>
+<!ELEMENT request_key (#PCDATA)>
+<!ELEMENT model_run (#PCDATA)>
+
+<!-- Échéance : prévision pour une heure précise -->
+<!ELEMENT echeance (temperature, pression, pluie, pluie_convective, humidite, vent_moyen, vent_rafales, vent_direction, iso_zero, risque_neige, cape, nebulosite)>
+<!ATTLIST echeance
+    hour CDATA #REQUIRED
+    timestamp CDATA #REQUIRED
+>
+
+<!-- Température avec plusieurs niveaux -->
+<!ELEMENT temperature (level+)>
+<!ELEMENT level (#PCDATA)>
+<!ATTLIST level
+    val CDATA #REQUIRED
+>
+
+<!-- Pression atmosphérique -->
+<!ELEMENT pression (level)>
+
+<!-- Précipitations -->
+<!ELEMENT pluie (#PCDATA)>
+<!ATTLIST pluie
+    interval CDATA #REQUIRED
+>
+
+<!ELEMENT pluie_convective (#PCDATA)>
+<!ATTLIST pluie_convective
+    interval CDATA #REQUIRED
+>
+
+<!-- Humidité -->
+<!ELEMENT humidite (level)>
+
+<!-- Vent -->
+<!ELEMENT vent_moyen (level)>
+<!ELEMENT vent_rafales (level)>
+<!ELEMENT vent_direction (level)>
+
+<!-- Autres données -->
+<!ELEMENT iso_zero (#PCDATA)>
+<!ELEMENT risque_neige (#PCDATA)>
+<!ELEMENT cape (#PCDATA)>
+
+<!-- Nébulosité -->
+<!ELEMENT nebulosite (level+)>
