@@ -613,28 +613,48 @@ if (isset($geoloc['error'])) {
                     $api_url = "https://www.infoclimat.fr/public-api/gfs/xml?_ll={$latitude},{$longitude}&_auth={$api_key}&_c=19f3aa7d766b6ba91191c8be71dd1ab2";
 
                     try {
-                        $context_options = array(
-                            'http' => array(
-                                'proxy' => 'tcp://www-cache:3128',
-                                'request_fulluri' => true,
-                                'timeout' => 10,
-                                'ignore_errors' => true
-                            ),
-                            'ssl' => array(
-                                'verify_peer' => false,
-                                'verify_peer_name' => false
-                            )
-                        );
-                        $context = stream_context_create($context_options);
+                        //j'utilise cURL car ca ne fonctionne pas avec file_get_contents sur webetu
+                        if (function_exists('curl_init')) {
+                            $ch = curl_init();
+                            curl_setopt($ch, CURLOPT_URL, $api_url);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+                            curl_setopt($ch, CURLOPT_PROXY, 'www-cache:3128');
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                            
+                            $xml_string = curl_exec($ch);
+                            $curl_error = curl_error($ch);
+                            curl_close($ch);
+                            
+                            if ($xml_string === false || !empty($curl_error)) {
+                                return "<div class='error'>
+                                    <p>⚠️ Impossible de récupérer les données météo</p>
+                                    <p><small>Erreur cURL : " . htmlspecialchars($curl_error) . "</small></p>
+                                </div>";
+                            }
+                        } else {
+                            //file_get_contents pour environnements sans cURL
+                            $context_options = array(
+                                'http' => array(
+                                    'timeout' => 10,
+                                    'ignore_errors' => true
+                                ),
+                                'ssl' => array(
+                                    'verify_peer' => false,
+                                    'verify_peer_name' => false
+                                )
+                            );
+                            $context = stream_context_create($context_options);
+                            $xml_string = @file_get_contents($api_url, false, $context);
 
-                        $xml_string = @file_get_contents($api_url, false, $context);
-
-                        if ($xml_string === false) {
-                            $error = error_get_last();
-                            return "<div class='error'>
-                                <p>⚠️ Impossible de récupérer les données météo</p>
-                                <p><small>Erreur : " . htmlspecialchars($error['message'] ?? 'Connexion à l\'API échouée') . "</small></p>
-                            </div>";
+                            if ($xml_string === false) {
+                                $error = error_get_last();
+                                return "<div class='error'>
+                                    <p>⚠️ Impossible de récupérer les données météo</p>
+                                    <p><small>Erreur : " . htmlspecialchars($error['message'] ?? 'Connexion à l\'API échouée') . "</small></p>
+                                </div>";
+                            }
                         }
 
                         if (strpos($xml_string, '<?xml') === false) {
@@ -649,7 +669,6 @@ if (isset($geoloc['error'])) {
                             return "<p class='error'>⚠️ Erreur lors du parsing XML</p>";
                         }
 
-                        // Création d'une version du XML avec déclaration DOCTYPE pour validation
                         $xmlWithDTD = "<?xml version='1.0' encoding='UTF-8'?>\n";
                         $xmlWithDTD .= "<!DOCTYPE previsions SYSTEM 'meteo.dtd'>\n";
                         $xmlContent = preg_replace('/<\?xml.*?\?>\s*/', '', $xml_string);
@@ -812,13 +831,13 @@ if (isset($geoloc['error'])) {
                         target="_blank">OBEPINE (data.gouv.fr)</a></li>
                 <li><strong>Qualité de l'air :</strong> <a href="https://www.atmo-grandest.eu/" target="_blank">ATMO
                         Grand Est</a></li>
-                <li><strong>Dépôt Git :</strong> <a href="#" target="_blank">Lien GitHub (à compléter)</a></li>
             </ul>
         </section>
     </main>
 
     <footer>
         <p>Projet Interopérabilité - BUT3 - <?php echo date('Y'); ?></p>
+        <p><a href="https://github.com/Kwilium54/atmosphere" target="_blank">🔗 GitHub - atmosphere</a></p>
     </footer>
 
     <!-- Leaflet JS -->
